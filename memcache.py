@@ -315,11 +315,11 @@ class Client(threading.local):
             if not s.connect():
                 continue
             if s.family == socket.AF_INET:
-                name = '{}:{} ({})'.format(s.ip, s.port, s.weight)
+                name = f'{s.ip}:{s.port} ({s.weight})'
             elif s.family == socket.AF_INET6:
-                name = '[{}]:{} ({})'.format(s.ip, s.port, s.weight)
+                name = f'[{s.ip}]:{s.port} ({s.weight})'
             else:
-                name = 'unix:{} ({})'.format(s.address, s.weight)
+                name = f'unix:{s.address} ({s.weight})'
             if not stat_args:
                 s.send_cmd('stats')
             else:
@@ -344,11 +344,11 @@ class Client(threading.local):
             if not s.connect():
                 continue
             if s.family == socket.AF_INET:
-                name = '{}:{} ({})'.format(s.ip, s.port, s.weight)
+                name = f'{s.ip}:{s.port} ({s.weight})'
             elif s.family == socket.AF_INET6:
-                name = '[{}]:{} ({})'.format(s.ip, s.port, s.weight)
+                name = f'[{s.ip}]:{s.port} ({s.weight})'
             else:
-                name = 'unix:{} ({})'.format(s.address, s.weight)
+                name = f'unix:{s.address} ({s.weight})'
             serverData = {}
             data.append((name, serverData))
             s.send_cmd('stats slabs')
@@ -382,11 +382,11 @@ class Client(threading.local):
             if not s.connect():
                 continue
             if s.family == socket.AF_INET:
-                name = '{}:{} ({})'.format(s.ip, s.port, s.weight)
+                name = f'{s.ip}:{s.port} ({s.weight})'
             elif s.family == socket.AF_INET6:
-                name = '[{}]:{} ({})'.format(s.ip, s.port, s.weight)
+                name = f'[{s.ip}]:{s.port} ({s.weight})'
             else:
-                name = 'unix:{} ({})'.format(s.address, s.weight)
+                name = f'unix:{s.address} ({s.weight})'
             serverData = {}
             data.append((name, serverData))
             s.send_cmd('stats items')
@@ -506,8 +506,6 @@ class Client(threading.local):
                 server.send_cmds(b''.join(bigcmd))
             except OSError as msg:
                 rc = 0
-                if isinstance(msg, tuple):
-                    msg = msg[1]
                 server.mark_dead(msg)
                 dead_servers.append(server)
 
@@ -524,8 +522,6 @@ class Client(threading.local):
                 for key in keys:
                     server.expect(b"DELETED")
             except OSError as msg:
-                if isinstance(msg, tuple):
-                    msg = msg[1]
                 server.mark_dead(msg)
                 rc = 0
         return rc
@@ -554,10 +550,8 @@ class Client(threading.local):
             line = server.readline()
             if line and line.strip() == b'DELETED':
                 return 1
-            self.debuglog('delete expected DELETED, got: {!r}'.format(line))
+            self.debuglog(f'delete expected DELETED, got: {line!r}')
         except OSError as msg:
-            if isinstance(msg, tuple):
-                msg = msg[1]
             server.mark_dead(msg)
         return 0
 
@@ -590,10 +584,8 @@ class Client(threading.local):
             line = server.readline()
             if line and line.strip() in [b'TOUCHED']:
                 return 1
-            self.debuglog('touch expected TOUCHED, got: {!r}'.format(line))
+            self.debuglog(f'touch expected TOUCHED, got: {line!r}')
         except OSError as msg:
-            if isinstance(msg, tuple):
-                msg = msg[1]
             server.mark_dead(msg)
         return 0
 
@@ -666,8 +658,6 @@ class Client(threading.local):
                 return None
             return int(line)
         except OSError as msg:
-            if isinstance(msg, tuple):
-                msg = msg[1]
             server.mark_dead(msg)
             return None
 
@@ -937,8 +927,6 @@ class Client(threading.local):
                         notstored.append(prefixed_to_orig_key[key])
                 server.send_cmds(b''.join(bigcmd))
             except OSError as msg:
-                if isinstance(msg, tuple):
-                    msg = msg[1]
                 server.mark_dead(msg)
                 dead_servers.append(server)
 
@@ -963,8 +951,6 @@ class Client(threading.local):
                         # un-mangle.
                         notstored.append(prefixed_to_orig_key[key])
             except (_Error, OSError) as msg:
-                if isinstance(msg, tuple):
-                    msg = msg[1]
                 server.mark_dead(msg)
         return notstored
 
@@ -1052,8 +1038,6 @@ class Client(threading.local):
                     return True
                 return server.expect(b"STORED", raise_exception=True) == b"STORED"
             except OSError as msg:
-                if isinstance(msg, tuple):
-                    msg = msg[1]
                 server.mark_dead(msg)
             return 0
 
@@ -1103,8 +1087,6 @@ class Client(threading.local):
                 finally:
                     server.expect(b"END", raise_exception=True)
             except (_Error, OSError) as msg:
-                if isinstance(msg, tuple):
-                    msg = msg[1]
                 server.mark_dead(msg)
                 return None
 
@@ -1203,8 +1185,6 @@ class Client(threading.local):
                 fullcmd = b"get " + b" ".join(server_keys[server])
                 server.send_cmd(fullcmd)
             except OSError as msg:
-                if isinstance(msg, tuple):
-                    msg = msg[1]
                 server.mark_dead(msg)
                 dead_servers.append(server)
 
@@ -1225,8 +1205,6 @@ class Client(threading.local):
                         retvals[prefixed_to_orig_key[rkey]] = val
                     line = server.readline()
             except (_Error, OSError) as msg:
-                if isinstance(msg, tuple):
-                    msg = msg[1]
                 server.mark_dead(msg)
         return retvals
 
@@ -1388,7 +1366,7 @@ class _Host:
         return 0
 
     def mark_dead(self, reason):
-        self.debuglog("MemCache: {}: {}.  Marking dead.".format(self, reason))
+        self.debuglog(f"MemCache: {self}: {reason}.  Marking dead.")
         self.deaduntil = time.time() + self.dead_retry
         if self.flush_on_reconnect:
             self.flush_on_next_connect = 1
@@ -1404,12 +1382,10 @@ class _Host:
             s.settimeout(self.socket_timeout)
         try:
             s.connect(self.address)
-        except socket.timeout as msg:
+        except TimeoutError as msg:
             self.mark_dead("connect: %s" % msg)
             return None
         except OSError as msg:
-            if isinstance(msg, tuple):
-                msg = msg[1]
             self.mark_dead("connect: %s" % msg)
             return None
         self.socket = s
@@ -1516,7 +1492,7 @@ class _Host:
         elif self.family == socket.AF_INET6:
             return "inet6:[%s]:%d%s" % (self.address[0], self.address[1], d)
         else:
-            return "unix:{}{}".format(self.address, d)
+            return f"unix:{self.address}{d}"
 
 
 def _doctest():
@@ -1527,7 +1503,7 @@ def _doctest():
     globs = {"mc": mc}
     results = doctest.testmod(memcache, globs=globs)
     mc.disconnect_all()
-    print("Doctests: {}".format(results))
+    print(f"Doctests: {results}")
     if results.failed:
         sys.exit(1)
 
